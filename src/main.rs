@@ -1,43 +1,49 @@
-struct BabyBlue {
-    matrix: Vec<u32>,
-    alphabed_size: usize,
-}
+use babyblue::{
+    char_to_index, load_raw_weights, save_raw_weights, BabyBlueInference, BabyBlueTrainer,
+};
+use std::fs;
 
-impl BabyBlue {
-    fn new(alphabed_size: usize) -> Self {
-        Self {
-            matrix: vec![0; alphabed_size * alphabed_size],
-            alphabed_size,
-        }
-    }
+fn main() -> std::io::Result<()> {
+    let size = 31;
+    
+    let mut trainer = BabyBlueTrainer::new(size);
+    
+    let text = fs::read_to_string("input.txt")
+        .expect("input.txt not found");
 
-    fn increment(&mut self, prev: usize, current: usize) {
-        let index = prev * self.alphabed_size + current;
-        self.matrix[index] += 1;
-    }
-}
-
-fn char_to_index(c: char) -> Option<usize> {
-    match c.to_ascii_lowercase() {
-        'a'..='z' => Some((c as u8 - b'a') as usize),
-        ' ' => Some(26),
-        _ => None,
-    }
-}
-
-fn main() {
-    let mut model = BabyBlue::new(31);
-    let text = "baby blue";
+    println!("Symbols: {}", text.len());
 
     let mut prev_idx: Option<usize> = None;
 
     for c in text.chars() {
         if let Some(current_idx) = char_to_index(c) {
             if let Some(p) = prev_idx {
-                model.increment(p, current_idx);
+                trainer.learn(p, current_idx);
             }
-
             prev_idx = Some(current_idx);
         }
     }
+    
+    let weights = trainer.export_matrix();
+    save_raw_weights("weights.bin", &weights)?;
+
+    let loaded_weights = load_raw_weights("weights.bin")?;
+    let predictor = BabyBlueInference::from_weights(loaded_weights, size);
+    
+    let mut current_idx = char_to_index('a').unwrap();
+
+    for _ in 0..50 {
+        let next_idx = predictor.predict_creative(current_idx);
+        let next_char = match next_idx {
+            30 => ' ',
+            i @ 0..=25 => (i as u8 + b'a') as char,
+            _ => '?',
+        };
+        print!("{}", next_char);
+        current_idx = next_idx;
+    }
+        
+    println!();
+
+    Ok(())
 }
