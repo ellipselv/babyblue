@@ -2,7 +2,7 @@ pub mod inference;
 pub mod trainer;
 
 pub use inference::BabyBlueInference;
-pub use trainer::{char_to_index, BabyBlueTrainer};
+pub use trainer::BabyBlueTrainer;
 
 use std::fs::File;
 use std::io::{self, Read, Write};

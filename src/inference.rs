@@ -17,7 +17,7 @@ impl BabyBlueInference {
         let start = current * self.size;
         let row = &self.matrix[start..start + self.size];
 
-        // Finds the max weight (simple greedy selection).
+        // finds the max weight (simple greedy selection).
         row.iter()
             .enumerate()
             .max_by_key(|&(_, &val)| val)
